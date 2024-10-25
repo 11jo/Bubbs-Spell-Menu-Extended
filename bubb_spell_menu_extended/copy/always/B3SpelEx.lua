@@ -124,8 +124,8 @@ function B3Spell_ActionbarListener(config, state)
 
 		-- Select mode based on the current actionbar state
 		if     quickStates[state]  then toReturn = B3Spell_Modes.Quick
-		elseif castConfigs[config] then toReturn = B3Spell_Modes.Normal
-		elseif config == 23        then toReturn = B3Spell_Modes.Innate
+		elseif castConfigs[config] then toReturn = B3Spell_MonolithicDisplayMode == 0 and B3Spell_Modes.Normal or B3Spell_Modes.Monolithic
+		elseif config == 23        then toReturn = B3Spell_MonolithicDisplayMode == 0 and B3Spell_Modes.Innate or B3Spell_Modes.Monolithic
 		elseif config == 28        then toReturn = B3Spell_Modes.Opcode214
 		else
 			-- Actionbar isn't in a state that opens the spell menu, and yet I'm launching... I must
@@ -219,7 +219,7 @@ function B3Spell_OnGameDestroyed()
 	-- Reset these global variables when a game is destroyed so
 	-- they don't confuse the spell menu on next loaded save
 	B3Spell_SpriteID = nil
-	B3Spell_Mode = B3Spell_Modes.Normal
+	B3Spell_Mode = B3Spell_GetDefaultMode()
 end
 EEex_GameState_AddDestroyedListener(B3Spell_OnGameDestroyed)
 
@@ -463,7 +463,7 @@ function B3Spell_FillFromMemorized()
 	local spellNameToKey = B3Spell_CacheSpellNameToKeyBindings()
 
 	local buttonType = nil
-	if B3Spell_Mode == B3Spell_Modes.Innate then
+	if B3Spell_Mode == B3Spell_Modes.Innate or B3Spell_Mode == B3Spell_Modes.Monolithic then
 
 		-- Cleric-thief abilities row
 		if sprite:getClass() == 15 then
@@ -496,105 +496,147 @@ function B3Spell_FillFromMemorized()
 
 			table.insert(B3Spell_SpellListInfo, levelToFill)
 		end
-
-		buttonType = 4
-	else
-		buttonType = 2
 	end
 
-	local mainSpells = B3Spell_Mode == B3Spell_Modes.Opcode214
-		and sprite:GetInternalButtonList()
-		or  sprite:GetQuickButtons(buttonType, 0)
+	local fillFromQuickButtons = function(quickButtons, actualModeType)
 
-	EEex_Utility_IterateCPtrList(mainSpells, function(m_CButtonData)
+		EEex_Utility_IterateCPtrList(quickButtons, function(m_CButtonData)
 
-		local resref = m_CButtonData.m_abilityId.m_res:get()
+			local resref = m_CButtonData.m_abilityId.m_res:get()
 
-		if resref ~= "" then
+			if resref ~= "" then
 
-			local abilityNum = m_CButtonData.m_abilityId.m_abilityNum
+				local abilityNum = m_CButtonData.m_abilityId.m_abilityNum
 
-			if abilityNum == -1 then
+				if abilityNum == -1 then
 
-				local nameStrref = m_CButtonData.m_name
-				local name = Infinity_FetchString(nameStrref)
+					local nameStrref = m_CButtonData.m_name
+					local name = Infinity_FetchString(nameStrref)
 
-				local spellHeader = EEex_Resource_Demand(resref, "SPL")
-				local level = spellHeader.spellLevel
+					local spellHeader = EEex_Resource_Demand(resref, "SPL")
+					local level = spellHeader.spellLevel
 
-				local levelToFill = {}
+					local levelToFill = {}
 
-				if level <= 0 then
+					if level <= 0 then
 
-					if not belowSpellsIndex then
-						levelToFill = {
-							["infoMode"] = B3Spell_InfoModes.BelowSpells,
-						}
-						belowSpellsIndex = #B3Spell_SpellListInfo + 1
-						table.insert(B3Spell_SpellListInfo, levelToFill)
+						if not belowSpellsIndex then
+							levelToFill = {
+								["infoMode"] = B3Spell_InfoModes.BelowSpells,
+							}
+							belowSpellsIndex = #B3Spell_SpellListInfo + 1
+							table.insert(B3Spell_SpellListInfo, levelToFill)
+						else
+							levelToFill = B3Spell_SpellListInfo[belowSpellsIndex]
+						end
+
+					elseif level <= 9 then
+
+						local levelInfoIndex = levelToIndex[level]
+						if not levelInfoIndex then
+							levelToFill = {
+								["infoMode"] = B3Spell_InfoModes.Spells,
+								["spellLevel"] = level,
+							}
+							levelToIndex[level] = #B3Spell_SpellListInfo + 1
+							table.insert(B3Spell_SpellListInfo, levelToFill)
+						else
+							levelToFill = B3Spell_SpellListInfo[levelInfoIndex]
+						end
+
 					else
-						levelToFill = B3Spell_SpellListInfo[belowSpellsIndex]
+
+						if not aboveSpellsIndex then
+							levelToFill = {
+								["infoMode"] = B3Spell_InfoModes.AboveSpells,
+							}
+							aboveSpellsIndex = #B3Spell_SpellListInfo + 1
+							table.insert(B3Spell_SpellListInfo, levelToFill)
+						else
+							levelToFill = B3Spell_SpellListInfo[aboveSpellsIndex]
+						end
+
 					end
 
-				elseif level <= 9 then
+					-- if B3Spell_Mode == B3Spell_Modes.Monolithic then
+					-- 	if actualModeType == B3Spell_Modes.Normal then
+					-- 		levelToFill.hasNormalHeader = true
+					-- 	elseif actualModeType == B3Spell_Modes.Innate then
+					-- 		levelToFill.hasInnateHeader = true
+					-- 	end
+					-- end
 
-					local levelInfoIndex = levelToIndex[level]
-					if not levelInfoIndex then
-						levelToFill = {
-							["infoMode"] = B3Spell_InfoModes.Spells,
-							["spellLevel"] = level,
-						}
-						levelToIndex[level] = #B3Spell_SpellListInfo + 1
-						table.insert(B3Spell_SpellListInfo, levelToFill)
-					else
-						levelToFill = B3Spell_SpellListInfo[levelInfoIndex]
+					local slotOrderType = B3Spell_SlotOrderTypes.Group1
+					local key = spellNameToKey[name]
+
+					if B3Spell_Mode == B3Spell_Modes.Monolithic then
+						if B3Spell_MonolithicDisplaySortMode == B3Spell_MonolithicDisplaySortModes.InnatesFirst then
+							slotOrderType = actualModeType == B3Spell_Modes.Innate and B3Spell_SlotOrderTypes.Group1 or B3Spell_SlotOrderTypes.Group2
+						elseif B3Spell_MonolithicDisplaySortMode == B3Spell_MonolithicDisplaySortModes.SpellsFirst then
+							slotOrderType = actualModeType == B3Spell_Modes.Normal and B3Spell_SlotOrderTypes.Group1 or B3Spell_SlotOrderTypes.Group2
+						end
 					end
 
+					local spellData = {
+						["slotOrderType"]       = slotOrderType,
+						["spellCastableCount"]  = B3Spell_Mode ~= B3Spell_Modes.Opcode214 and m_CButtonData.m_count or 0,
+						["spellDescription"]    = spellHeader.genericDescription,
+						["spellDisabled"]       = m_CButtonData.m_bDisabled == 1,
+						["spellIcon"]           = m_CButtonData.m_icon:get(),
+						["spellKeyBindingName"] = key and B3Spell_GetKeyBindingKeyName(key) or "",
+						["spellLevel"]          = level,
+						["spellModeType"]       = actualModeType,
+						["spellName"]           = name,
+						["spellNameStrref"]     = nameStrref,
+						["spellRealNameStrref"] = spellHeader.genericName,
+						["spellResref"]         = resref,
+						["spellType"]           = spellHeader.itemType,
+					}
+
+					table.insert(levelToFill, spellData)
+					B3Spell_SpellResrefToData[resref] = {
+						["spellData"] = spellData,
+					}
+
+					if key and not B3Spell_KeyToSpellData[key] then
+						B3Spell_KeyToSpellData[key] = spellData
+					end
 				else
-
-					if not aboveSpellsIndex then
-						levelToFill = {
-							["infoMode"] = B3Spell_InfoModes.AboveSpells,
-						}
-						aboveSpellsIndex = #B3Spell_SpellListInfo + 1
-						table.insert(B3Spell_SpellListInfo, levelToFill)
-					else
-						levelToFill = B3Spell_SpellListInfo[aboveSpellsIndex]
-					end
-
-				end
-
-				local key = spellNameToKey[name]
-
-				local spellData = {
-					["spellCastableCount"]  = B3Spell_Mode ~= B3Spell_Modes.Opcode214 and m_CButtonData.m_count or 0,
-					["spellDescription"]    = spellHeader.genericDescription,
-					["spellDisabled"]       = m_CButtonData.m_bDisabled == 1,
-					["spellIcon"]           = m_CButtonData.m_icon:get(),
-					["spellKeyBindingName"] = key and B3Spell_GetKeyBindingKeyName(key) or "",
-					["spellLevel"]          = level,
-					["spellName"]           = name,
-					["spellNameStrref"]     = nameStrref,
-					["spellRealNameStrref"] = spellHeader.genericName,
-					["spellResref"]         = resref,
-					["spellType"]           = spellHeader.itemType,
-				}
-
-				table.insert(levelToFill, spellData)
-				B3Spell_SpellResrefToData[resref] = {
-					["spellData"] = spellData,
-				}
-
-				if key and not B3Spell_KeyToSpellData[key] then
-					B3Spell_KeyToSpellData[key] = spellData
+					print("[B3Spell_FillSpellListInfo] (ASSERT) Not implemented, report to @Bubb")
 				end
 			else
-				print("[B3Spell_FillSpellListInfo] (ASSERT) Not implemented, report to @Bubb")
+				print("[B3Spell_FillSpellListInfo] (ASSERT) Empty resref, report to @Bubb")
 			end
-		else
-			print("[B3Spell_FillSpellListInfo] (ASSERT) Empty resref, report to @Bubb")
-		end
-	end)
+		end)
+	end
+
+	if B3Spell_Mode == B3Spell_Modes.Opcode214 then
+		fillFromQuickButtons(sprite:GetInternalButtonList(), B3Spell_Modes.Opcode214)
+	elseif B3Spell_Mode == B3Spell_Modes.Innate then
+		fillFromQuickButtons(sprite:GetQuickButtons(4, 0), B3Spell_Modes.Innate)
+	elseif B3Spell_Mode == B3Spell_Modes.Monolithic then
+		fillFromQuickButtons(sprite:GetQuickButtons(2, 0), B3Spell_Modes.Normal)
+		fillFromQuickButtons(sprite:GetQuickButtons(4, 0), B3Spell_Modes.Innate)
+	else
+		fillFromQuickButtons(sprite:GetQuickButtons(2, 0), B3Spell_Mode)
+	end
+
+	-- for _, levelToFill in ipairs(B3Spell_SpellListInfo) do
+	-- 	if levelToFill.hasNormalHeader then
+	-- 		table.insert(levelToFill, {
+	-- 			["slotOrderType"] = B3Spell_SlotOrderTypes.InlineHeader1,
+	-- 			["bam"] = "GUIBTACT",
+	-- 			["frame"] = 12,
+	-- 		})
+	-- 	end
+	-- 	if levelToFill.hasInnateHeader then
+	-- 		table.insert(levelToFill, {
+	-- 			["slotOrderType"] = B3Spell_SlotOrderTypes.InlineHeader2,
+	-- 			["bam"] = "GUIBTACT",
+	-- 			["frame"] = 38,
+	-- 		})
+	-- 	end
+	-- end
 
 	table.sort(B3Spell_SpellListInfo, function(a, b)
 		return a.infoMode < b.infoMode or (a.infoMode == B3Spell_InfoModes.Spells and b.infoMode == B3Spell_InfoModes.Spells and a.spellLevel < b.spellLevel)
@@ -616,6 +658,11 @@ function B3Spell_UpdateSlotPressedState()
 	-- the engine normally uses to render slots isn't exposed.
 
 	local data = B3Spell_InstanceIDs["B3Spell_Menu"]["B3Spell_Menu_TEMPLATE_Action"].instanceData[instanceId]
+
+	if not data.enabled then
+		return false
+	end
+
 	local capture = EngineGlobals.capture.item
 
 	if capture and capture.templateName:get() == "B3Spell_Menu_TEMPLATE_Action" and capture.instanceId == instanceId then
@@ -635,6 +682,10 @@ function B3Spell_UpdateSlotPressedState()
 			local iconX, iconY, iconWidth, iconHeight = Infinity_GetArea("B3Spell_StoredInstance")
 			Infinity_SetArea("B3Spell_StoredInstance", iconX + 2, iconY + 2, iconWidth - 2, iconHeight - 2)
 
+			EEex_Menu_StoreTemplateInstance("B3Spell_Menu", "B3Spell_Menu_TEMPLATE_Bam", data.pairedInnateMarkerID, "B3Spell_StoredInstance")
+			local innateMarkerX, innateMarkerY, _, _ = Infinity_GetArea("B3Spell_StoredInstance")
+			Infinity_SetArea("B3Spell_StoredInstance", innateMarkerX + 1, innateMarkerY + 1, nil, nil)
+
 			data.didOffset = true
 		end
 
@@ -652,6 +703,10 @@ function B3Spell_UpdateSlotPressedState()
 		EEex_Menu_StoreTemplateInstance("B3Spell_Menu", "B3Spell_Menu_TEMPLATE_Icon", data.pairedIconID, "B3Spell_StoredInstance")
 		local iconX, iconY, iconWidth, iconHeight = Infinity_GetArea("B3Spell_StoredInstance")
 		Infinity_SetArea("B3Spell_StoredInstance", iconX - 2, iconY - 2, iconWidth + 2, iconHeight + 2)
+
+		EEex_Menu_StoreTemplateInstance("B3Spell_Menu", "B3Spell_Menu_TEMPLATE_Bam", data.pairedInnateMarkerID, "B3Spell_StoredInstance")
+		local innateMarkerX, innateMarkerY, _, _ = Infinity_GetArea("B3Spell_StoredInstance")
+		Infinity_SetArea("B3Spell_StoredInstance", innateMarkerX - 1, innateMarkerY - 1, nil, nil)
 
 		data.didOffset = false
 	end

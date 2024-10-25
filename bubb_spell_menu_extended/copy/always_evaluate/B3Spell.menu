@@ -151,7 +151,7 @@ menu
 	{
 		label
 		{
-			enabled true
+			enabled        "B3Spell_Menu_TEMPLATE_Icon_Enabled()"
 			icon lua       "B3Spell_Menu_TEMPLATE_Icon_Icon()"
 			count lua      "B3Spell_Menu_TEMPLATE_Icon_Count()"
 			useOverlayTint "B3Spell_Menu_TEMPLATE_Icon_DisableTint()"
@@ -165,7 +165,7 @@ menu
 	{
 		label
 		{
-			enabled true
+			enabled      "B3Spell_Menu_TEMPLATE_Bam_Enabled()"
 			bam lua      "B3Spell_Menu_TEMPLATE_Bam_Bam()"
 			sequence lua "B3Spell_Menu_TEMPLATE_Bam_Sequence()"
 			frame lua    "B3Spell_Menu_TEMPLATE_Bam_Frame()"

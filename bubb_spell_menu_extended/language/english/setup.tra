@@ -30,6 +30,11 @@
 @26 = ~Top: ~                             // %B3Spell_Tooltip_Top%
 @27 = ~Bottom: ~                          // %B3Spell_Tooltip_Bottom%
 @28 = ~Move Slot Headers To The Right: ~  // %B3Spell_Tooltip_MoveSlotHeadersToTheRight%
+@29 = ~Monolithic Display Mode: ~         // %B3Spell_Tooltip_MonolithicDisplayMode%
+@30 = ~Sort Mode: ~                       // %B3Spell_Tooltip_MonolithicDisplaySortMode%
+@31 = ~Innates First: ~                   // %B3Spell_Tooltip_MonolithicDisplaySortModeInnatesFirst%
+@32 = ~Spells First: ~                    // %B3Spell_Tooltip_MonolithicDisplaySortModeSpellsFirst%
+@33 = ~Purely Alphabetical: ~             // %B3Spell_Tooltip_MonolithicDisplayModePurelyAlphabetical%
 
 //////////////////
 // B3Spell.menu //

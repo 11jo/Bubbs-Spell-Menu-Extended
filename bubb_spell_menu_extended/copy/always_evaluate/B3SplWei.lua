@@ -31,6 +31,11 @@ B3Spell_Tooltip_VerticalSlotsAlignment = "%B3Spell_Tooltip_VerticalSlotsAlignmen
 B3Spell_Tooltip_Top = "%B3Spell_Tooltip_Top%"
 B3Spell_Tooltip_Bottom = "%B3Spell_Tooltip_Bottom%"
 B3Spell_Tooltip_MoveSlotHeadersToTheRight = "%B3Spell_Tooltip_MoveSlotHeadersToTheRight%"
+B3Spell_Tooltip_MonolithicDisplayMode = "%B3Spell_Tooltip_MonolithicDisplayMode%"
+B3Spell_Tooltip_MonolithicDisplaySortMode = "%B3Spell_Tooltip_MonolithicDisplaySortMode%"
+B3Spell_Tooltip_MonolithicDisplaySortModeInnatesFirst = "%B3Spell_Tooltip_MonolithicDisplaySortModeInnatesFirst%"
+B3Spell_Tooltip_MonolithicDisplaySortModeSpellsFirst = "%B3Spell_Tooltip_MonolithicDisplaySortModeSpellsFirst%"
+B3Spell_Tooltip_MonolithicDisplayModePurelyAlphabetical = "%B3Spell_Tooltip_MonolithicDisplayModePurelyAlphabetical%"
 
 ---------------------------------
 -- WeiDU-defined Lua Constants --
