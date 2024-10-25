@@ -380,7 +380,6 @@ function B3Spell_DoThieving()
 	local game = EEex_EngineGlobal_CBaldurChitin.m_pObjectGame
 	game:SetState(2, false)
 	game:SetIconIndex(0x24)
-	EEex_Actionbar_RestoreLastState()
 end
 
 -- Used in M_B3Spel.lua
@@ -480,8 +479,11 @@ function B3Spell_FillFromMemorized()
 					["disableTint"] = false,
 					["tooltip"] = thievingTooltip,
 					["func"] = function()
-						Infinity_PopMenu("B3Spell_Menu")
+						if B3Spell_AlwaysOpen == 0 then
+							Infinity_PopMenu("B3Spell_Menu")
+						end
 						B3Spell_DoThieving()
+						EEex_Actionbar_GetArray().m_nSelectedButton = EEex_Actionbar_ButtonType.SPECIAL_ABILITIES
 					end,
 				})
 			else
