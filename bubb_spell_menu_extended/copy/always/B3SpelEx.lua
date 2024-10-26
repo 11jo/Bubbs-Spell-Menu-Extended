@@ -78,27 +78,27 @@ function B3Spell_CheckActionbarButtonHighlightState(mode)
 	end
 end
 
-function B3Spell_ActionbarListener(config, state)
+function B3Spell_ReactToActionbar(config, state, manualReopen)
 
 	if B3Spell_DebugDisable or (e:GetActiveEngine() == worldScreen and EEex_Area_GetVisible() == nil) then
 		-- This happens when quickloading - calling Infinity_PushMenu() / Infinity_PopMenu() while in this state CRASHES THE GAME.
-		return
+		return false
 	end
 
 	local selectedList = EngineGlobals.g_pBaldurChitin.m_pObjectGame.m_group.m_memberList
 	if selectedList.m_nCount ~= 1 then
 		Infinity_PopMenu("B3Spell_Menu")
-		return
+		return false
 	end
 
 	if EEex_Actionbar_IsThievingHotkeyOpeningSpecialAbilities() or not Infinity_IsMenuOnStack("WORLD_ACTIONBAR") then
-		return
+		return false
 	end
 
 	if config == 23 and B3Spell_IgnoreSpecialAbilities == 1 and B3Spell_AlwaysOpen == 1 then
 		-- Pop the spell menu if it is in "Always Open" mode and special abilities are ignored
 		Infinity_PopMenu("B3Spell_Menu")
-		return
+		return false
 	end
 
 	local spriteID = selectedList.m_pNodeHead.data
@@ -151,32 +151,82 @@ function B3Spell_ActionbarListener(config, state)
 		[30] = true,                                -- Cast Spell - Cleric/Mage
 	})[config]
 
+	local toReturn = false
+
 	if B3Spell_AlwaysOpen == 1 then
 		-- "Always Open" mode
-		B3Spell_LaunchSpellMenu(decideMode(), spriteID)
+		toReturn = B3Spell_LaunchSpellMenu(decideMode(), spriteID)
 		if launchedFromActionbar then
 			restoreActionbar()
 		end
 
 	elseif launchedFromActionbar then
 		-- Not "Always Open" mode, but the menu was invoked by the actionbar
-		B3Spell_LaunchSpellMenu(decideMode(), spriteID)
+		toReturn = B3Spell_LaunchSpellMenu(decideMode(), spriteID)
 		restoreActionbar()
 
-	elseif Infinity_IsMenuOnStack("B3Spell_Menu") then
+	elseif manualReopen or Infinity_IsMenuOnStack("B3Spell_Menu") then
 		-- Not "Always Open" mode, not invoked by the actionbar, but the menu was already open.
 		-- Somehow the user bypassed the exit background and altered the actionbar state. Just
 		-- relaunch the menu to update it.
-		B3Spell_LaunchSpellMenu(decideMode(), spriteID)
+		toReturn = B3Spell_LaunchSpellMenu(decideMode(), spriteID)
 	end
+
+	return toReturn
+end
+
+function B3Spell_ActionbarListener(config, state)
+	B3Spell_ReactToActionbar(config, state)
 end
 EEex_Actionbar_AddListener(B3Spell_ActionbarListener)
 
+-- This should be a part of EEex
+function B3Spell_GetActionbarConfigFromState(state)
+	return ({
+		[1]   = 0,  -- Mage / Sorcerer
+		[2]   = 1,  -- Fighter
+		[3]   = 2,  -- Cleric
+		[4]   = 3,  -- Thief
+		[5]   = 4,  -- Bard
+		[6]   = 5,  -- Paladin
+		[7]   = 6,  -- Fighter Mage
+		[8]   = 7,  -- Fighter Cleric
+		[9]   = 8,  -- Fighter Thief
+		[10]  = 9,  -- Fighter Mage Thief
+		[11]  = 10, -- Druid
+		[12]  = 11, -- Ranger
+		[13]  = 12, -- Mage Thief
+		[14]  = 13, -- Cleric Mage
+		[15]  = 14, -- Cleric Thief
+		[16]  = 15, -- Fighter Druid
+		[17]  = 16, -- Fighter Mage Cleric
+		[18]  = 17, -- Cleric Ranger
+		[20]  = 18, -- Monk
+		[21]  = 19, -- Shaman
+		[101] = 20, -- Select Weapon Ability
+		[102] = 21, -- Spells (Select Quick Spell)
+		[103] = 21, -- Spells (Cast)
+		[104] = 22, -- Select Quick Item Ability
+		[105] = 22, -- Use Item
+		[106] = 23, -- Special Abilities
+		[107] = 24, -- Select Quick Formation
+		[108] = 25, -- Defunct Select Quick Formation (Not used)
+		[109] = 26, -- Group Selected
+		[110] = 27, -- Unknown (No buttons defined; not used?)
+		[111] = 28, -- Internal List (Opcode #214)
+		[112] = 29, -- Controlled (Class doesn't have a dedicated state)
+		[113] = 30, -- Cleric / Mage Spells (Cast)
+		[114] = 30, -- Cleric / Mage Spells (Select Quick Spell)
+	})[state]
+end
+
+function B3Spell_AttemptLaunchSpellMenu(manualReopen)
+	local state = EEex_Actionbar_GetState()
+	return B3Spell_ReactToActionbar(B3Spell_GetActionbarConfigFromState(state), state, manualReopen)
+end
+
 function B3Spell_OnActionbarOpened()
-	if not B3Spell_DebugDisable and B3Spell_AlwaysOpen == 1 then
-		B3Spell_CheckActionbarButtonHighlightState(B3Spell_Mode)
-		B3Spell_LaunchSpellMenu(B3Spell_Mode, EEex_Sprite_GetSelectedID())
-	end
+	B3Spell_AttemptLaunchSpellMenu()
 end
 
 function B3Spell_OnActionbarClosed()

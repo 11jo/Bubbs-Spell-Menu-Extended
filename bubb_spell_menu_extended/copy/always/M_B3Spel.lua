@@ -253,7 +253,7 @@ function B3Spell_LaunchSpellMenu(mode, spriteID)
 
 		if spriteID == B3Spell_SpriteID and mode == B3Spell_Mode then
 			-- Attempting to launch the same mode again
-			return
+			return true
 		end
 
 		-- Refresh menu
@@ -265,7 +265,7 @@ function B3Spell_LaunchSpellMenu(mode, spriteID)
 
 		if Infinity_IsMenuOnStack("B3Spell_Menu_Options") or Infinity_IsMenuOnStack("B3Spell_Menu_SelectSlotArea") then
 			-- Don't allow the spell menu to open while the options panel is being displayed...
-			return
+			return false
 		end
 
 		if mode ~= B3Spell_Mode then
@@ -277,6 +277,8 @@ function B3Spell_LaunchSpellMenu(mode, spriteID)
 		B3Spell_SpriteID = spriteID
 		Infinity_PushMenu("B3Spell_Menu")
 	end
+
+	return true
 end
 
 function B3Spell_RefreshMenu()
@@ -2273,14 +2275,13 @@ function B3Spell_Menu_Options_OnClose()
 		handleGroup(columnGroup)
 	end
 
-	local spriteID = EEex_Sprite_GetSelectedID()
-	if spriteID ~= -1 then
-		-- Attempt to relaunch the spell menu
-		B3Spell_SlotsSuppressOnOpen = true
-		B3Spell_LaunchSpellMenu(B3Spell_GetTransferMode(spriteID), spriteID)
-		B3Spell_SlotsSuppressOnOpen = false
-	else
-		-- Can't relaunch the spell menu, so close it out logically...
+	-- Attempt to relaunch the spell menu
+	B3Spell_SlotsSuppressOnOpen = true
+	local launchAttemptResult = B3Spell_AttemptLaunchSpellMenu(true)
+	B3Spell_SlotsSuppressOnOpen = false
+
+	if not launchAttemptResult then
+		-- Couldn't relaunch the spell menu, so close it out logically...
 		B3Spell_Menu_OnClose()
 	end
 end
