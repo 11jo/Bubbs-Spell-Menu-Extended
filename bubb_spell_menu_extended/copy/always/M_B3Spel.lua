@@ -1208,9 +1208,10 @@ end
 
 function B3Spell_CreateInnateMarker(enabled, x, y)
 	local size = B3Spell_SlotSize * 4/13
-	local cornerOffset = B3Spell_SlotSize * 4/52
-	local cornerX = x + B3Spell_SlotSize - size - cornerOffset
-	local cornerY = y + cornerOffset
+	local cornerOffsetX = B3Spell_SlotSize * 5/52
+	local cornerOffsetY = B3Spell_SlotSize * 7/52
+	local cornerX = x + B3Spell_SlotSize - size - cornerOffsetX
+	local cornerY = y + cornerOffsetY
 	return B3Spell_CreateBam(enabled, "B3INMRK", 0, 3, cornerX, cornerY, size, size)
 end
 
