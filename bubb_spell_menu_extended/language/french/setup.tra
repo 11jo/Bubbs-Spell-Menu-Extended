@@ -30,6 +30,11 @@
 @26 = ~Vers le Haut : ~                                                // %B3Spell_Tooltip_Top%
 @27 = ~Vers le Bas : ~                                                 // %B3Spell_Tooltip_Bottom%
 @28 = ~Déplacer l'ensemble des emplacements de sorts sur la Droite : ~ // %B3Spell_Tooltip_MoveSlotHeadersToTheRight%
+@29 = ~Mode d'affichage monolithique : ~                               // %B3Spell_Tooltip_MonolithicDisplayMode%
+@30 = ~Positionnement : ~                                              // %B3Spell_Tooltip_MonolithicDisplaySortMode%
+@31 = ~Capacités Innés en premier : ~                                  // %B3Spell_Tooltip_MonolithicDisplaySortModeInnatesFirst%
+@32 = ~Sortilèges en premier : ~                                       // %B3Spell_Tooltip_MonolithicDisplaySortModeSpellsFirst%
+@33 = ~Ordre Alphabétique : ~                                          // %B3Spell_Tooltip_MonolithicDisplayModePurelyAlphabetical%
 
 //////////////////
 // B3Spell.menu //
